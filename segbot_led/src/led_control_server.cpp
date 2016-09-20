@@ -10,7 +10,7 @@
 #include <actionlib/server/simple_action_server.h>
 
 /*******************************************************
-*                   segbot_led Headers                    *
+*                   segbot_led Headers                 *
 ********************************************************/
 #include "ledcom.h"
 
