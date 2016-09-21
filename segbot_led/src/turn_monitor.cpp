@@ -15,10 +15,16 @@
 /*******************************************************
 *                   segbot_led Headers                 *
 ********************************************************/
-#include "bwi_msgs/LEDClear.h"
-#include "bwi_msgs/LEDControlAction.h"
 #include "bwi_msgs/LEDActionResult.h"
 #include "bwi_msgs/LEDAnimations.h"
+#include "bwi_msgs/LEDClear.h"
+#include "bwi_msgs/LEDControlAction.h"
+
+/*******************************************************
+*                   Service Headers                    *
+********************************************************/
+#include "bwi_msgs/QuestionDialog.h"
+#include "bwi_services/SpeakMessage.h"
 
 /*******************************************************
 *                 Global Variables                     *
@@ -58,6 +64,13 @@ int main(int argc, char **argv)
     ros::NodeHandle n;
 
     ros::Rate loop_rate(30);
+
+    // Sets up service clients
+    ros::ServiceClient speak_message_client = n.serviceClient<bwi_services::SpeakMessage>("/speak_message_service/speak_message"); 
+    bwi_services::SpeakMessage speak_srv;
+
+    ros::ServiceClient gui_client = n.serviceClient<bwi_msgs::QuestionDialog>("question_dialog"); 
+    bwi_msgs::QuestionDialog gui_srv;
 
     // Sets up subscribers
     global_path = n.subscribe("/move_base/EBandPlannerROS/global_plan", 1, path_cb);
@@ -107,6 +120,13 @@ int main(int argc, char **argv)
                     goal.type.led_animations = bwi_msgs::LEDAnimations::RIGHT_TURN;
                     goal.timeout = ros::Duration(0);
                     ac.sendGoal(goal);
+                    
+                    gui_srv.request.type = 0; 
+                    gui_srv.request.message = "Turning Right"; 
+                    gui_client.call(gui_srv)
+
+                    speak_srv.request.message = "Turning Right";
+                    speak_message_client.call(speak_srv);  
                 }
                 // Left turn
                 else
@@ -114,6 +134,13 @@ int main(int argc, char **argv)
                     goal.type.led_animations = bwi_msgs::LEDAnimations::LEFT_TURN;
                     goal.timeout = ros::Duration(0);
                     ac.sendGoal(goal);
+
+                    gui_srv.request.type = 0; 
+                    gui_srv.request.message = "Turning Left"; 
+                    gui_client.call(gui_srv)
+
+                    speak_srv.request.message = "Turning Left";
+                    speak_message_client.call(speak_srv);  
                 }
                 stop_yaw = yaw;
             }
