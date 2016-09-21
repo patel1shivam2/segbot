@@ -8,8 +8,7 @@ find_package(catkin REQUIRED COMPONENTS
   serial
   std_msgs
 )
-
-add_definitions(-std=c++11)
+Tr
 
 catkin_package(
   INCLUDE_DIRS ledcomm
@@ -28,9 +27,14 @@ add_executable(test_led_control_server test/test.cpp)
 add_dependencies(test_led_control_server ${catkin_EXPORTED_TARGETS} ${${PROJECT_NAME}_EXPORTED_TARGETS})
 target_link_libraries(test_led_control_server ${catkin_LIBRARIES})
 
+add_executable(turn_monitor src/turn_monitor.cpp)
+add_dependencies(turn_monitor ${catkin_EXPORTED_TARGETS} ${${PROJECT_NAME}_EXPORTED_TARGETS})
+target_link_libraries(turn_monitor ${catkin_LIBRARIES})
+
 install(TARGETS
           led_control_server
           test_led_control_server
+          turn_monitor
         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 install(DIRECTORY
