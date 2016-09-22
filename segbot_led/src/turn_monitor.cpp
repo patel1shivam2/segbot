@@ -66,7 +66,7 @@ int main(int argc, char **argv)
     ros::Rate loop_rate(30);
 
     // Sets up service clients
-    ros::ServiceClient speak_message_client = n.serviceClient<bwi_services::SpeakMessage>("/speak_message_service/speak_message"); 
+    ros::ServiceClient speak_message_client = n.serviceClient<bwi_services::SpeakMessage>("/speak_message_service_node/speak_message"); 
     bwi_services::SpeakMessage speak_srv;
 
     ros::ServiceClient gui_client = n.serviceClient<bwi_msgs::QuestionDialog>("question_dialog"); 
@@ -102,8 +102,10 @@ int main(int argc, char **argv)
         // Turns turn signal off if turn is complete
         if(turn_signal && (abs(current_yaw - stop_yaw) < .1))
         {
+            gui_srv.request.type = 0; 
+            gui_srv.request.message = ""; 
+            gui_client.call(gui_srv);
             turn_signal = false;
-            ac.cancelGoal();
         }
 
         // Iterates through the first half of points in the global path and determines if any major
@@ -111,19 +113,19 @@ int main(int argc, char **argv)
         for(int i = 0; i < current_path.poses.size() / 2; i++)
         {
             double yaw = tf::getYaw(current_path.poses[i].pose.orientation);
-            if(abs(current_yaw - yaw) > 0.5)
+            if((abs(current_yaw - yaw) > 0.5) && !turn_signal)
             {
                 turn_signal = true;
                 // Right turn
                 if(current_yaw - yaw < 0)
                 {
                     goal.type.led_animations = bwi_msgs::LEDAnimations::RIGHT_TURN;
-                    goal.timeout = ros::Duration(0);
+                    goal.timeout = ros::Duration(7);
                     ac.sendGoal(goal);
                     
                     gui_srv.request.type = 0; 
                     gui_srv.request.message = "Turning Right"; 
-                    gui_client.call(gui_srv)
+                    gui_client.call(gui_srv);
 
                     speak_srv.request.message = "Turning Right";
                     speak_message_client.call(speak_srv);  
@@ -132,12 +134,12 @@ int main(int argc, char **argv)
                 else
                 {
                     goal.type.led_animations = bwi_msgs::LEDAnimations::LEFT_TURN;
-                    goal.timeout = ros::Duration(0);
+                    goal.timeout = ros::Duration(7);
                     ac.sendGoal(goal);
 
                     gui_srv.request.type = 0; 
                     gui_srv.request.message = "Turning Left"; 
-                    gui_client.call(gui_srv)
+                    gui_client.call(gui_srv);
 
                     speak_srv.request.message = "Turning Left";
                     speak_message_client.call(speak_srv);  

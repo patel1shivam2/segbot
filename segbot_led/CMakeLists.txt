@@ -8,7 +8,8 @@ find_package(catkin REQUIRED COMPONENTS
   serial
   std_msgs
 )
-Tr
+
+add_definitions( -std=c++11 )
 
 catkin_package(
   INCLUDE_DIRS ledcomm
