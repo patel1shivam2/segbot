@@ -48,5 +48,6 @@
     <param name="top_of_u_end" value="34" />
 
   </node>
+  <node name="speak_message_service" pkg="bwi_services" type="speak_message_service"></node>
 </launch>
 
