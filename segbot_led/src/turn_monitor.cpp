@@ -66,26 +66,24 @@ int main(int argc, char **argv)
     ros::Rate loop_rate(30);
 
     // Sets up service clients
-    ros::ServiceClient speak_message_client = n.serviceClient<bwi_services::SpeakMessage>("/speak_message_service_node/speak_message"); 
+    ros::ServiceClient speak_message_client = n.serviceClient<bwi_services::SpeakMessage>("/speak_message_service/speak_message"); 
     bwi_services::SpeakMessage speak_srv;
 
     ros::ServiceClient gui_client = n.serviceClient<bwi_msgs::QuestionDialog>("question_dialog"); 
     bwi_msgs::QuestionDialog gui_srv;
 
     // Sets up subscribers
-    global_path = n.subscribe("/move_base/EBandPlannerROS/global_plan", 1, path_cb);
+    global_path = n.subscribe("/move_base/GlobalPlanner/plan", 1, path_cb);
     robot_pose = n.subscribe("/amcl_pose", 1, pose_cb);
 
     // Sets up action client
     actionlib::SimpleActionClient<bwi_msgs::LEDControlAction> ac("led_control_server", true);
-
-    ROS_INFO("Waiting for action server to start.");
     ac.waitForServer();
 
     bwi_msgs::LEDControlGoal goal;
 
     // Waits for current path and pose to update
-    while(!heard_path || !heard_pose)
+    while(!heard_path || !heard_pose) 
     {
         ros::spinOnce();
     }
@@ -108,12 +106,13 @@ int main(int argc, char **argv)
             turn_signal = false;
         }
 
+        // TODO: Choose max dist rather then halving plan
         // Iterates through the first half of points in the global path and determines if any major
         // changes in orientation are coming.
         for(int i = 0; i < current_path.poses.size() / 2; i++)
         {
             double yaw = tf::getYaw(current_path.poses[i].pose.orientation);
-            if((abs(current_yaw - yaw) > 0.5) && !turn_signal)
+            if((abs(current_yaw - yaw) > 0.81) && !turn_signal)
             {
                 turn_signal = true;
                 // Right turn
