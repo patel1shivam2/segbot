@@ -28,6 +28,10 @@ add_executable(test_led_control_server test/test.cpp)
 add_dependencies(test_led_control_server ${catkin_EXPORTED_TARGETS} ${${PROJECT_NAME}_EXPORTED_TARGETS})
 target_link_libraries(test_led_control_server ${catkin_LIBRARIES})
 
+add_executable(blocked_monitor src/blocked_monitor.cpp)
+add_dependencies(blocked_monitor ${catkin_EXPORTED_TARGETS} ${${PROJECT_NAME}_EXPORTED_TARGETS})
+target_link_libraries(blocked_monitor ${catkin_LIBRARIES})
+
 add_executable(turn_monitor src/turn_monitor.cpp)
 add_dependencies(turn_monitor ${catkin_EXPORTED_TARGETS} ${${PROJECT_NAME}_EXPORTED_TARGETS})
 target_link_libraries(turn_monitor ${catkin_LIBRARIES})
