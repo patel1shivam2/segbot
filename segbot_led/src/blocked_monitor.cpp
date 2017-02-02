@@ -1,3 +1,6 @@
+#include <stdlib.h>
+#include <time.h>
+
 /*******************************************************
 *                    ROS Headers                       *
 ********************************************************/
@@ -46,6 +49,7 @@ actionlib_msgs::GoalStatusArray r_goal;
 bool heard_path = false;
 bool heard_pose = false;
 bool heard_goal = false;
+bool block_detected = false;
 
 /*******************************************************
 *                 Callback Functions                   *
@@ -79,6 +83,9 @@ int main(int argc, char **argv)
     ros::NodeHandle n;
 
     ros::Rate loop_rate(30);
+    ros::Rate inner_rate(7);
+
+    srand(time(NULL));
 
     // Sets up service clients
     ros::ServiceClient speak_message_client = n.serviceClient<bwi_services::SpeakMessage>("/speak_message_service/speak_message");
@@ -112,23 +119,47 @@ int main(int argc, char **argv)
         //ROS_INFO_STREAM(r_goal.status_list[0].status);
         if(heard_goal == true)
         {
-            if(current_path.poses.size() == 0 && r_goal.status_list[0].status == 4 )
+            int randLED = rand()%2;
+
+            while(current_path.poses.size() == 0 && r_goal.status_list[0].status == 4 )
             {
-                        goal.type.led_animations = bwi_msgs::LEDAnimations::BLOCKED;
-                        goal.timeout = ros::Duration(7);
-                        ac.sendGoal(goal);
 
-                        gui_srv.request.type = 0;
-                        gui_srv.request.message = "Blocked";
-                        gui_client.call(gui_srv);
+                // TODO: Add logging for study
+                // Time in state
+                // Times recovery behavior is used
+                // Times replanning of path is done
+                // Optional: Record scene
+                if(randLED == 1)
+                {
+                    goal.type.led_animations = bwi_msgs::LEDAnimations::BLOCKED;
+                    goal.timeout = ros::Duration(7);
+                    ac.sendGoal(goal);
 
-                        speak_srv.request.message = "My path is Blocked, please clear a path for me";
-                        speak_message_client.call(speak_srv);
-                        ROS_INFO("blocked");
+                    gui_srv.request.type = 0;
+                    gui_srv.request.message = "Blocked";
+                    gui_client.call(gui_srv);
+
+                    speak_srv.request.message = "My path is Blocked, please clear a path for me";
+                    speak_message_client.call(speak_srv);
+                }
+                else
+                {
+                    // Log without led
+                }
+                ROS_INFO("blocked");
+
+                block_detected = true;
+                inner_rate.sleep();
+                ros::spinOnce();
+            }
+            if (block_detected)
+            {
+                // End log
+                ac.cancelAllGoals();
+                block_detected = false;
             }
             heard_goal = false;
         }
-        ac.cancelAllGoals();
         loop_rate.sleep();
     }
     return 0;
