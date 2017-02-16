@@ -148,7 +148,7 @@ int main(int argc, char **argv)
                     if (!block_detected)
                     {
                         tm *gmtm = gmtime(&now);
-                        log_file.open(log_filename);
+                        log_file.open(log_filename, std::ios_base::app | std::ios_base::out);
                         // state,led,date,time
                         log_file << "start," << randLED << "," << (1900 + gmtm->tm_year) << "-" << (1 + gmtm->tm_mon) << "-" << gmtm->tm_mday << "," << (1 + gmtm->tm_hour) << ":" << (1 + gmtm->tm_min) << ":" << (1 + gmtm->tm_sec) << std::endl;
                         log_file.close();
@@ -170,7 +170,7 @@ int main(int argc, char **argv)
                     if (!block_detected)
                     {
                         tm *gmtm = gmtime(&now);
-                        log_file.open(log_filename);
+                        log_file.open(log_filename, std::ios_base::app | std::ios_base::out);
                         // state,led,date,time
                         log_file << "start," << randLED << "," << (1900 + gmtm->tm_year) << "-" << (1 + gmtm->tm_mon) << "-" << gmtm->tm_mday << "," << (1 + gmtm->tm_hour) << ":" << (1 + gmtm->tm_min) << ":" << (1 + gmtm->tm_sec) << std::endl;
                         log_file.close();
@@ -192,7 +192,7 @@ int main(int argc, char **argv)
                 get_count_client.call(get_count_srv);
 
                 tm *gmtm = gmtime(&now);
-                log_file.open(log_filename);
+                log_file.open(log_filename, std::ios_base::app | std::ios_base::out);
                 // state,led,date,time
                 log_file << "end," << randLED << "," << (1900 + gmtm->tm_year) << "-" << (1 + gmtm->tm_mon) << "-" << gmtm->tm_mday << "," << (1 + gmtm->tm_hour) << ":" << (1 + gmtm->tm_min) << ":" << (1 + gmtm->tm_sec) << "," << get_count_srv.response.replan_count << "," << get_count_srv.response.recovery_count << std::endl;
                 log_file.close();
