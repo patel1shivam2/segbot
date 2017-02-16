@@ -1,3 +1,6 @@
+#include <ctime>
+#include <fstream>
+#include <iostream>
 #include <stdlib.h>
 #include <time.h>
 
@@ -12,6 +15,7 @@
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <nav_msgs/Path.h>
 #include <move_base_msgs/MoveBaseAction.h>
+#include <ros/package.h>
 #include <ros/ros.h>
 #include <std_msgs/Char.h>
 #include <tf/tf.h>
@@ -30,6 +34,9 @@
 #include "bwi_msgs/QuestionDialog.h"
 #include "bwi_services/SpeakMessage.h"
 #include "actionlib_msgs/GoalStatus.h"
+
+#include <move_base_msgs/MoveBaseLogging.h>
+#include <std_srvs/Empty.h>
 
 /*******************************************************
 *                 Global Variables                     *
@@ -84,12 +91,23 @@ int main(int argc, char **argv)
 
     ros::Rate loop_rate(30);
     ros::Rate inner_rate(7);
+    ros::Rate recovered_check(2);
 
     srand(time(NULL));
+    time_t now = time(0);
+
+    std::ofstream log_file;
+    std::string log_filename = ros::package::getPath("led_study") + "/data/" + "blocked_state.csv";
 
     // Sets up service clients
     ros::ServiceClient speak_message_client = n.serviceClient<bwi_services::SpeakMessage>("/speak_message_service/speak_message");
     bwi_services::SpeakMessage speak_srv;
+
+    ros::ServiceClient init_count_client = n.serviceClient<std_srvs::Empty>("move_base/init_replan_count");
+    std_srvs::Empty init_count_srv;
+
+    ros::ServiceClient get_count_client = n.serviceClient<move_base_msgs::MoveBaseLogging>("move_base/log_replan_count");
+    move_base_msgs::MoveBaseLogging get_count_srv;
 
     ros::ServiceClient gui_client = n.serviceClient<bwi_msgs::QuestionDialog>("question_dialog");
     bwi_msgs::QuestionDialog gui_srv;
@@ -123,16 +141,21 @@ int main(int argc, char **argv)
 
             while(current_path.poses.size() == 0 && r_goal.status_list[0].status == 4 )
             {
+                init_count_client.call(init_count_srv);
 
-                // TODO: Add logging for study
-                // Time in state
-                // Times recovery behavior is used
-                // Times replanning of path is done
-                // Optional: Record scene
                 if(randLED == 1)
                 {
+                    if (!block_detected)
+                    {
+                        tm *gmtm = gmtime(&now);
+                        log_file.open(log_filename);
+                        // state,led,date,time
+                        log_file << "start," << randLED << "," << (1900 + gmtm->tm_year) << "-" << (1 + gmtm->tm_mon) << "-" << gmtm->tm_mday << "," << (1 + gmtm->tm_hour) << ":" << (1 + gmtm->tm_min) << ":" << (1 + gmtm->tm_sec) << std::endl;
+                        log_file.close();
+                    }
+
                     goal.type.led_animations = bwi_msgs::LEDAnimations::BLOCKED;
-                    goal.timeout = ros::Duration(7);
+                    goal.timeout = ros::Duration(8);
                     ac.sendGoal(goal);
 
                     gui_srv.request.type = 0;
@@ -144,7 +167,14 @@ int main(int argc, char **argv)
                 }
                 else
                 {
-                    // Log without led
+                    if (!block_detected)
+                    {
+                        tm *gmtm = gmtime(&now);
+                        log_file.open(log_filename);
+                        // state,led,date,time
+                        log_file << "start," << randLED << "," << (1900 + gmtm->tm_year) << "-" << (1 + gmtm->tm_mon) << "-" << gmtm->tm_mday << "," << (1 + gmtm->tm_hour) << ":" << (1 + gmtm->tm_min) << ":" << (1 + gmtm->tm_sec) << std::endl;
+                        log_file.close();
+                    }
                 }
                 ROS_INFO("blocked");
 
@@ -152,11 +182,20 @@ int main(int argc, char **argv)
                 inner_rate.sleep();
                 ros::spinOnce();
             }
-            if (block_detected)
+            recovered_check.sleep();
+            if (block_detected && current_path.poses.size() != 0 || r_goal.status_list[0].status != 4 )
             {
                 // End log
                 ac.cancelAllGoals();
                 block_detected = false;
+
+                get_count_client.call(get_count_srv);
+
+                tm *gmtm = gmtime(&now);
+                log_file.open(log_filename);
+                // state,led,date,time
+                log_file << "end," << randLED << "," << (1900 + gmtm->tm_year) << "-" << (1 + gmtm->tm_mon) << "-" << gmtm->tm_mday << "," << (1 + gmtm->tm_hour) << ":" << (1 + gmtm->tm_min) << ":" << (1 + gmtm->tm_sec) << "," << get_count_srv.response.replan_count << "," << get_count_srv.response.recovery_count << std::endl;
+                log_file.close();
             }
             heard_goal = false;
         }
