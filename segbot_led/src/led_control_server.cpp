@@ -395,7 +395,7 @@ public:
 
           // Blinking Versions of Turn Signals
 
-/*          // Left Turn Blinking Animation
+          // Left Turn Blinking Animation
           case bwi_msgs::LEDAnimations::LEFT_TURN:
             {
               // Executes as long as timeout has not been reached, Goal is not Preempted, and ROS is OK
@@ -467,7 +467,7 @@ public:
                 usleep(100000);
               }
               break;
-            }*/
+            }
 
           // Circular Versions of Turn Signals [One Set]
 
@@ -689,7 +689,7 @@ public:
               break;
             }*/
 
-          // Circular Versions of Turn Signals [Four Sets]
+/*          // Circular Versions of Turn Signals [Four Sets]
 
           // Left Turn Circular Animation [Four  Sets]
           case bwi_msgs::LEDAnimations::LEFT_TURN:
@@ -906,7 +906,7 @@ public:
               }
               break;
             }
-
+*/
           // Reverse Animtion
           case bwi_msgs::LEDAnimations::REVERSE:
             {

@@ -35,6 +35,7 @@
 #include "bwi_services/SpeakMessage.h"
 #include "actionlib_msgs/GoalStatus.h"
 
+#include <move_base/move_base.h>
 #include <move_base_msgs/MoveBaseLogging.h>
 #include <std_srvs/Empty.h>
 
@@ -47,9 +48,12 @@ ros::Subscriber global_path;
 ros::Subscriber robot_pose;
 ros::Subscriber status;
 ros::Subscriber robot_goal;
+ros::Subscriber end_goal;
 
 nav_msgs::Path current_path;
 geometry_msgs::Pose current_pose;
+geometry_msgs::Pose end_pose;
+
 
 actionlib_msgs::GoalStatusArray r_goal;
 
@@ -83,6 +87,16 @@ void pose_cb(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg)
     heard_pose = true;
 }
 
+void end_goal_cb(const geometry_msgs::Pose::ConstPtr& msg)
+{
+    geometry_msgs::Pose new_pose = *msg;
+    end_pose = new_pose;
+    heard_pose = true;
+}
+
+double getDistance(){
+    return sqrt(pow((end_pose.position.x - current_pose.position.x),2) + pow((end_pose.position.y - current_pose.position.y),2));
+}
 
 int main(int argc, char **argv)
 {
@@ -111,42 +125,55 @@ int main(int argc, char **argv)
 
     ros::ServiceClient gui_client = n.serviceClient<bwi_msgs::QuestionDialog>("question_dialog");
     bwi_msgs::QuestionDialog gui_srv;
-
+ 
     // Sets up subscribers
     global_path = n.subscribe("/move_base/GlobalPlanner/plan", 1, path_cb);
     robot_pose = n.subscribe("/amcl_pose", 1, pose_cb);
     robot_goal = n.subscribe("/move_base/status", 1, status_cb);
-
+    end_goal = n.subscribe("/led_study/blocked_goal", 1, end_goal_cb);
+     
     // Sets up action client
     actionlib::SimpleActionClient<bwi_msgs::LEDControlAction> ac("led_control_server", true);
     ac.waitForServer();
-
+    ros::ServiceClient client = n.serviceClient<move_base_msgs::MoveBaseLogging>("/move_base/log_replan_count");
+    int prevReplanCount = 0;
+    int distanceToGoal;
+    move_base_msgs::MoveBaseLogging srv;
     bwi_msgs::LEDControlGoal goal;
-
+    distanceToGoal = getDistance();	
     // Waits for current path and pose to update
+    
     while(!heard_path || !heard_pose)
     {
         ros::spinOnce();
+        loop_rate.sleep();
     }
-
+ 
     while(ros::ok())
     {
         // Updates current path and pose
         ros::spinOnce();
-
+        
+       
+        client.call(srv);
+        
         //ROS_INFO_STREAM(r_goal.status_list[0].status);
         if(heard_goal == true)
         {
             int randLED = rand()%2;
-
-            while(current_path.poses.size() == 0 && r_goal.status_list[0].status == 4 )
+            //TODO check if getting closer to goal by euclidian distance
+            //Check constant if correct for variability
+            while((current_path.poses.size() == 0 && r_goal.status_list[0].status == 4) || (distanceToGoal+.01 < getDistance()))
             {
-                init_count_client.call(init_count_srv);
-
+				
+                //init_count_client.call(init_count_srv);
+				client.call(srv);
+        
                 if(randLED == 1)
                 {
                     if (!block_detected)
                     {
+						ROS_INFO_STREAM("blocked using leds");
                         tm *gmtm = gmtime(&now);
                         log_file.open(log_filename, std::ios_base::app | std::ios_base::out);
                         // state,led,date,time
@@ -169,6 +196,7 @@ int main(int argc, char **argv)
                 {
                     if (!block_detected)
                     {
+						ROS_INFO_STREAM("blocked not using leds");
                         tm *gmtm = gmtime(&now);
                         log_file.open(log_filename, std::ios_base::app | std::ios_base::out);
                         // state,led,date,time
@@ -179,8 +207,10 @@ int main(int argc, char **argv)
                 ROS_INFO("blocked");
 
                 block_detected = true;
+                prevReplanCount = srv.response.replan_count;
                 inner_rate.sleep();
                 ros::spinOnce();
+                
             }
             recovered_check.sleep();
             if (block_detected && current_path.poses.size() != 0 || r_goal.status_list[0].status != 4 )
@@ -199,6 +229,7 @@ int main(int argc, char **argv)
             }
             heard_goal = false;
         }
+        distanceToGoal = getDistance();	
         loop_rate.sleep();
     }
     return 0;
