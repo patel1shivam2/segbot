@@ -104,7 +104,7 @@ int main(int argc, char **argv)
     ros::NodeHandle n;
 
     ros::Rate loop_rate(30);
-    ros::Rate inner_rate(7);
+    ros::Rate inner_rate(100);
     ros::Rate recovered_check(2);
 
     srand(time(NULL));
@@ -137,7 +137,7 @@ int main(int argc, char **argv)
     ac.waitForServer();
     ros::ServiceClient client = n.serviceClient<move_base_msgs::MoveBaseLogging>("/move_base/log_replan_count");
     int prevReplanCount = 0;
-    int distanceToGoal;
+    double distanceToGoal;
     move_base_msgs::MoveBaseLogging srv;
     bwi_msgs::LEDControlGoal goal;
     distanceToGoal = getDistance();	
@@ -163,10 +163,17 @@ int main(int argc, char **argv)
             int randLED = rand()%2;
             //TODO check if getting closer to goal by euclidian distance
             //Check constant if correct for variability
-            while((current_path.poses.size() == 0 && r_goal.status_list[0].status == 4) || (distanceToGoal+.01 < getDistance()))
+			ROS_INFO_STREAM("distanceToGoal " << distanceToGoal);
+			ROS_INFO_STREAM("getDistance " << getDistance()); 
+            ROS_INFO_STREAM("out of loop diff " << (distanceToGoal-getDistance()));
+            //test with replan count if reduces false positives and if improves preformance
+            while((current_path.poses.size() == 0 && r_goal.status_list[0].status == 4) || ((distanceToGoal-getDistance()) >0) )
             {
-				
+				ROS_INFO_STREAM("distanceToGoal " << distanceToGoal);
+				ROS_INFO_STREAM("getDistance " << getDistance());
+                ROS_INFO_STREAM("difference in loop " << (distanceToGoal-getDistance()));
                 //init_count_client.call(init_count_srv);
+				distanceToGoal = getDistance();	
 				client.call(srv);
         
                 if(randLED == 1)
@@ -204,13 +211,12 @@ int main(int argc, char **argv)
                         log_file.close();
                     }
                 }
-                ROS_INFO("blocked");
 
                 block_detected = true;
                 prevReplanCount = srv.response.replan_count;
+
                 inner_rate.sleep();
                 ros::spinOnce();
-                
             }
             recovered_check.sleep();
             if (block_detected && current_path.poses.size() != 0 || r_goal.status_list[0].status != 4 )
