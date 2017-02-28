@@ -104,12 +104,12 @@ int main(int argc, char **argv)
     ros::NodeHandle n;
 
     ros::Rate loop_rate(30);
-    ros::Rate inner_rate(100);
+    ros::Rate inner_rate(30);
     ros::Rate recovered_check(2);
 
     srand(time(NULL));
     time_t now = time(0);
-
+    int old_count = 0;
     std::ofstream log_file;
     std::string log_filename = ros::package::getPath("led_study") + "/data/" + "blocked_state.csv";
 
@@ -140,6 +140,7 @@ int main(int argc, char **argv)
     double distanceToGoal;
     move_base_msgs::MoveBaseLogging srv;
     bwi_msgs::LEDControlGoal goal;
+    double check = 0;
     distanceToGoal = getDistance();	
     // Waits for current path and pose to update
     
@@ -161,25 +162,39 @@ int main(int argc, char **argv)
         if(heard_goal == true)
         {
             int randLED = rand()%2;
+
+           
+
             //TODO check if getting closer to goal by euclidian distance
             //Check constant if correct for variability
-			ROS_INFO_STREAM("distanceToGoal " << distanceToGoal);
-			ROS_INFO_STREAM("getDistance " << getDistance()); 
-            ROS_INFO_STREAM("out of loop diff " << (distanceToGoal-getDistance()));
+			//ROS_INFO_STREAM("distanceToGoal " << distanceToGoal);
+			//ROS_INFO_STREAM("getDistance " << getDistance()); 
+            //ROS_INFO_STREAM("out of loop diff " << (distanceToGoal-getDistance()));
+            ROS_INFO_STREAM("out of loop replan count " << srv.response.replan_count);
+            ROS_INFO_STREAM("prev of loop replan count " << prevReplanCount);
             //test with replan count if reduces false positives and if improves preformance
-            while((current_path.poses.size() == 0 && r_goal.status_list[0].status == 4) || ((distanceToGoal-getDistance()) >0) )
+            check = distanceToGoal-getDistance();
+            old_count = srv.response.replan_count;
+            while((current_path.poses.size() == 0 && r_goal.status_list[0].status == 4) || prevReplanCount + 10 < srv.response.replan_count) 
             {
-				ROS_INFO_STREAM("distanceToGoal " << distanceToGoal);
-				ROS_INFO_STREAM("getDistance " << getDistance());
-                ROS_INFO_STREAM("difference in loop " << (distanceToGoal-getDistance()));
-                //init_count_client.call(init_count_srv);
-				distanceToGoal = getDistance();	
-				client.call(srv);
+                //check = -check;
+				//ROS_INFO_STREAM("distanceToGoal " << distanceToGoal);
+				//ROS_INFO_STREAM("getDistance " << getDistance());
+                //ROS_INFO_STREAM("difference in loop " << (check));
+                ROS_INFO_STREAM("in blocked loop");
+                ROS_INFO_STREAM("replan count " << srv.response.replan_count);
+                
+				// distanceToGoal = getDistance();	
+
+			    client.call(srv); 
         
                 if(randLED == 1)
                 {
+                    ROS_INFO_STREAM("want to use leds blocked loop");
                     if (!block_detected)
                     {
+                        //init_count_client.call(init_count_srv);
+                        //old_count = srv.response.replan_count;
 						ROS_INFO_STREAM("blocked using leds");
                         tm *gmtm = gmtime(&now);
                         log_file.open(log_filename, std::ios_base::app | std::ios_base::out);
@@ -201,8 +216,11 @@ int main(int argc, char **argv)
                 }
                 else
                 {
+                    ROS_INFO_STREAM("dont want to use leds blocked loop");
                     if (!block_detected)
                     {
+                        //init_count_client.call(init_count_srv);
+                        //old_count = srv.response.replan_count;
 						ROS_INFO_STREAM("blocked not using leds");
                         tm *gmtm = gmtime(&now);
                         log_file.open(log_filename, std::ios_base::app | std::ios_base::out);
@@ -218,24 +236,28 @@ int main(int argc, char **argv)
                 inner_rate.sleep();
                 ros::spinOnce();
             }
+
             recovered_check.sleep();
-            if (block_detected && current_path.poses.size() != 0 || r_goal.status_list[0].status != 4 )
+
+            if (block_detected)
             {
                 // End log
                 ac.cancelAllGoals();
                 block_detected = false;
 
-                get_count_client.call(get_count_srv);
-
+               // get_count_client.call(get_count_srv);
+                client.call(srv); 
                 tm *gmtm = gmtime(&now);
                 log_file.open(log_filename, std::ios_base::app | std::ios_base::out);
                 // state,led,date,time
-                log_file << "end," << randLED << "," << (1900 + gmtm->tm_year) << "-" << (1 + gmtm->tm_mon) << "-" << gmtm->tm_mday << "," << (1 + gmtm->tm_hour) << ":" << (1 + gmtm->tm_min) << ":" << (1 + gmtm->tm_sec) << "," << get_count_srv.response.replan_count << "," << get_count_srv.response.recovery_count << std::endl;
+                log_file << "end," << randLED << "," << (1900 + gmtm->tm_year) << "-" << (1 + gmtm->tm_mon) << "-" << gmtm->tm_mday << "," << (1 + gmtm->tm_hour) << ":" << (1 + gmtm->tm_min) << ":" << (1 + gmtm->tm_sec) << "," << (srv.response.replan_count - old_count) << "," << get_count_srv.response.recovery_count << std::endl;
                 log_file.close();
             }
             heard_goal = false;
         }
+        //init_count_client.call(init_count_srv);
         distanceToGoal = getDistance();	
+        //prevReplanCount = 0;
         loop_rate.sleep();
     }
     return 0;
