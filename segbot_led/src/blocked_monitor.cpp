@@ -174,7 +174,7 @@ int main(int argc, char **argv)
             ROS_INFO_STREAM("prev of loop replan count " << prevReplanCount);
             //test with replan count if reduces false positives and if improves preformance
             check = distanceToGoal-getDistance();
-            old_count = srv.response.replan_count;
+            old_count = prevReplanCount;
             while((current_path.poses.size() == 0 && r_goal.status_list[0].status == 4) || prevReplanCount + 10 < srv.response.replan_count) 
             {
                 //check = -check;
@@ -257,6 +257,7 @@ int main(int argc, char **argv)
         }
         //init_count_client.call(init_count_srv);
         distanceToGoal = getDistance();	
+        prevReplanCount = srv.response.replan_count;
         //prevReplanCount = 0;
         loop_rate.sleep();
     }
