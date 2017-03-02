@@ -143,7 +143,7 @@ int main(int argc, char **argv)
     double check = 0;
     distanceToGoal = getDistance();	
     // Waits for current path and pose to update
-    
+    init_count_client.call(init_count_srv);
     while(!heard_path || !heard_pose)
     {
         ros::spinOnce();
@@ -154,17 +154,13 @@ int main(int argc, char **argv)
     {
         // Updates current path and pose
         ros::spinOnce();
-        
-       
         client.call(srv);
         
         //ROS_INFO_STREAM(r_goal.status_list[0].status);
         if(heard_goal == true)
         {
             int randLED = rand()%2;
-
-           
-
+       
             //TODO check if getting closer to goal by euclidian distance
             //Check constant if correct for variability
 			//ROS_INFO_STREAM("distanceToGoal " << distanceToGoal);
@@ -175,14 +171,13 @@ int main(int argc, char **argv)
             //test with replan count if reduces false positives and if improves preformance
             check = distanceToGoal-getDistance();
             old_count = prevReplanCount;
+            ROS_INFO_STREAM("old count " << old_count);
             while((current_path.poses.size() == 0 && r_goal.status_list[0].status == 4) || prevReplanCount + 10 < srv.response.replan_count) 
             {
                 //check = -check;
 				//ROS_INFO_STREAM("distanceToGoal " << distanceToGoal);
 				//ROS_INFO_STREAM("getDistance " << getDistance());
                 //ROS_INFO_STREAM("difference in loop " << (check));
-                ROS_INFO_STREAM("in blocked loop");
-                ROS_INFO_STREAM("replan count " << srv.response.replan_count);
                 
 				// distanceToGoal = getDistance();	
 
@@ -202,17 +197,18 @@ int main(int argc, char **argv)
                         log_file << "start," << randLED << "," << (1900 + gmtm->tm_year) << "-" << (1 + gmtm->tm_mon) << "-" << gmtm->tm_mday << "," << (1 + gmtm->tm_hour) << ":" << (1 + gmtm->tm_min) << ":" << (1 + gmtm->tm_sec) << std::endl;
                         log_file.close();
                     }
-
+				
                     goal.type.led_animations = bwi_msgs::LEDAnimations::BLOCKED;
                     goal.timeout = ros::Duration(8);
                     ac.sendGoal(goal);
-
+						
                     gui_srv.request.type = 0;
                     gui_srv.request.message = "Blocked";
                     gui_client.call(gui_srv);
-
+					/*//hangs here when hardware fails
                     speak_srv.request.message = "My path is Blocked, please clear a path for me";
-                    speak_message_client.call(speak_srv);
+                    speak_message_client.call(speak_srv);*/
+                    	
                 }
                 else
                 {
@@ -223,16 +219,15 @@ int main(int argc, char **argv)
                         //old_count = srv.response.replan_count;
 						ROS_INFO_STREAM("blocked not using leds");
                         tm *gmtm = gmtime(&now);
+                        ROS_INFO_STREAM("old count " << old_count);
                         log_file.open(log_filename, std::ios_base::app | std::ios_base::out);
                         // state,led,date,time
                         log_file << "start," << randLED << "," << (1900 + gmtm->tm_year) << "-" << (1 + gmtm->tm_mon) << "-" << gmtm->tm_mday << "," << (1 + gmtm->tm_hour) << ":" << (1 + gmtm->tm_min) << ":" << (1 + gmtm->tm_sec) << std::endl;
                         log_file.close();
                     }
                 }
-
                 block_detected = true;
                 prevReplanCount = srv.response.replan_count;
-
                 inner_rate.sleep();
                 ros::spinOnce();
             }
@@ -244,14 +239,16 @@ int main(int argc, char **argv)
                 // End log
                 ac.cancelAllGoals();
                 block_detected = false;
-
-               // get_count_client.call(get_count_srv);
+               
+                get_count_client.call(get_count_srv);
+                ROS_INFO_STREAM("diff " << get_count_srv.response.recovery_count - old_count); 
                 client.call(srv); 
                 tm *gmtm = gmtime(&now);
                 log_file.open(log_filename, std::ios_base::app | std::ios_base::out);
                 // state,led,date,time
-                log_file << "end," << randLED << "," << (1900 + gmtm->tm_year) << "-" << (1 + gmtm->tm_mon) << "-" << gmtm->tm_mday << "," << (1 + gmtm->tm_hour) << ":" << (1 + gmtm->tm_min) << ":" << (1 + gmtm->tm_sec) << "," << (srv.response.replan_count - old_count) << "," << get_count_srv.response.recovery_count << std::endl;
+                log_file << "end," << randLED << "," << (1900 + gmtm->tm_year) << "-" << (1 + gmtm->tm_mon) << "-" << gmtm->tm_mday << "," << (1 + gmtm->tm_hour) << ":" << (1 + gmtm->tm_min) << ":" << (1 + gmtm->tm_sec) << "," << (get_count_srv.response.replan_count  - old_count) << "," << get_count_srv.response.recovery_count << std::endl;
                 log_file.close();
+                //init_count_client.call(init_count_srv);
             }
             heard_goal = false;
         }
