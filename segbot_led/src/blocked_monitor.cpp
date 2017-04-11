@@ -83,11 +83,11 @@ void status_cb(const actionlib_msgs::GoalStatusArray::ConstPtr& msg_goal)
 
 void pose_cb(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg)
 {
-	 
-	 
+
+
     //clock_t startTime = clock();
    // startTime = ros::Time::now();
-   // if((ros::Time::now() - startTime) > ros::Duration(2.0)){ 
+   // if((ros::Time::now() - startTime) > ros::Duration(2.0)){
       //  ROS_INFO_STREAM("updated values within pose cb");
         geometry_msgs::PoseWithCovarianceStamped new_pose = *msg;
         current_pose = new_pose.pose.pose;
@@ -115,7 +115,7 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv, "blocked_monitor");
     ros::NodeHandle n;
-    
+
     ros::Rate loop_rate(30);
     ros::Rate inner_rate(100);
     ros::Rate recovered_check(2);
@@ -133,28 +133,26 @@ int main(int argc, char **argv)
     ros::ServiceClient init_count_client = n.serviceClient<std_srvs::Empty>("move_base/init_replan_count");
     std_srvs::Empty init_count_srv;
 
-    ros::ServiceClient get_count_client = n.serviceClient<move_base_msgs::MoveBaseLogging>("move_base/log_replan_count");
+    ros::ServiceClient get_count_client = n.serviceClient<move_base_msgs::MoveBaseLogging>("/move_base/log_replan_count");
     move_base_msgs::MoveBaseLogging get_count_srv;
 
     ros::ServiceClient gui_client = n.serviceClient<bwi_msgs::QuestionDialog>("question_dialog");
     bwi_msgs::QuestionDialog gui_srv;
- 
+
     // Sets up subscribers
     global_path = n.subscribe("/move_base/GlobalPlanner/plan", 1, path_cb);
     robot_pose = n.subscribe("/amcl_pose", 1, pose_cb);
     robot_goal = n.subscribe("/move_base/status", 1, status_cb);
     end_goal = n.subscribe("/led_study/blocked_goal", 1, end_goal_cb);
-     
-    // Sets up action client
+
+    // Sets up action get_count_client
     actionlib::SimpleActionClient<bwi_msgs::LEDControlAction> ac("led_control_server", true);
     ac.waitForServer();
-    ros::ServiceClient client = n.serviceClient<move_base_msgs::MoveBaseLogging>("/move_base/log_replan_count");
     int prevReplanCount = 0;
     double distanceToGoal;
-    move_base_msgs::MoveBaseLogging srv;
     bwi_msgs::LEDControlGoal goal;
     double check = 0;
-    distanceToGoal = getDistance(); 
+    distanceToGoal = getDistance();
     // Waits for current path and pose to update
     init_count_client.call(init_count_srv);
     startTime = ros::Time::now();
@@ -167,19 +165,19 @@ int main(int argc, char **argv)
     {
         // Updates current path and pose
         ros::spinOnce();
-        client.call(srv);
-        
+        get_count_client.call(get_count_srv);
+
         //ROS_INFO_STREAM(r_goal.status_list[0].status);
         if(heard_goal == true)
         {
             int randLED = rand()%2;
-            int randSpeech = rand()%2; 
+            int randSpeech = rand()%2;
             //TODO check if getting closer to goal by euclidian distance
             //Check constant if correct for variability
             //ROS_INFO_STREAM("distanceToGoal " << distanceToGoal);
-            //ROS_INFO_STREAM("getDistance " << getDistance()); 
+            //ROS_INFO_STREAM("getDistance " << getDistance());
             ROS_INFO_STREAM("out of loop diff " << (distanceToGoal-getDistance()));
-            ROS_INFO_STREAM("out of loop replan count " << srv.response.replan_count);
+            ROS_INFO_STREAM("out of loop replan count " << get_count_srv.response.replan_count);
             ROS_INFO_STREAM("prev of loop replan count " << prevReplanCount);
             //test with replan count if reduces false positives and if improves preformance
             check = distanceToGoal-getDistance();
@@ -192,22 +190,22 @@ int main(int argc, char **argv)
                 //ROS_INFO_STREAM("distanceToGoal " << distanceToGoal);
                 //ROS_INFO_STREAM("getDistance " << getDistance());
                 //ROS_INFO_STREAM("difference in loop " << (check));
-				distanceToGoal = getDistance(); 
-	
-                client.call(srv); 
-        
+				distanceToGoal = getDistance();
+
+                get_count_client.call(get_count_srv);
+
                 if(randLED == 1)
                 {
                     ROS_INFO_STREAM("want to use leds blocked loop");
                     if (!block_detected)
                     {
                         //init_count_client.call(init_count_srv);
-                        //old_count = srv.response.replan_count;
+                        //old_count = get_count_srv.response.replan_count;
                         ROS_INFO_STREAM("blocked using leds");
                         now = time(0);
                         tm *gmtm = gmtime(&now);
                         log_file.open(log_filename, std::ios_base::app | std::ios_base::out);
-                        // state,led,date,time
+                        // state,led,speech,date,time
                         log_file << "start," << randLED << "," << randSpeech << "," << (1900 + gmtm->tm_year) << "-" << (1 + gmtm->tm_mon) << "-" << gmtm->tm_mday << "," << (1 + gmtm->tm_hour) << ":" << (1 + gmtm->tm_min) << ":" << (1 + gmtm->tm_sec) << std::endl;
                         log_file.close();
                         gui_srv.request.type = 0;
@@ -220,12 +218,12 @@ int main(int argc, char **argv)
                             speak_message_client.call(speak_srv);
                         }
                     }
-                
+
                     goal.type.led_animations = bwi_msgs::LEDAnimations::BLOCKED;
                     goal.timeout = ros::Duration(8);
                     ac.sendGoal(goal);
-                       
-                        
+
+
                 }
                 else
                 {
@@ -233,19 +231,19 @@ int main(int argc, char **argv)
                     if (!block_detected)
                     {
                         //init_count_client.call(init_count_srv);
-                        //old_count = srv.response.replan_count;
+                        //old_count = get_count_srv.response.replan_count;
                         ROS_INFO_STREAM("blocked not using leds");
                         now = time(0);
                         tm *gmtm = gmtime(&now);
                         ROS_INFO_STREAM("old count " << old_count);
                         log_file.open(log_filename, std::ios_base::app | std::ios_base::out);
-                        // state,led,date,time
+                        // state,led,speech,date,time
                         log_file << "start," << randLED << "," << randSpeech << "," << (1900 + gmtm->tm_year) << "-" << (1 + gmtm->tm_mon) << "-" << gmtm->tm_mday << "," << (1 + gmtm->tm_hour) << ":" << (1 + gmtm->tm_min) << ":" << (1 + gmtm->tm_sec) << std::endl;
                         log_file.close();
                     }
                 }
                 block_detected = true;
-                prevReplanCount = srv.response.replan_count;
+                prevReplanCount = get_count_srv.response.replan_count;
                 inner_rate.sleep();
                 ros::spinOnce();
             }
@@ -256,19 +254,19 @@ int main(int argc, char **argv)
             {
                 // End log
                 ac.cancelAllGoals();
-                
+
                 gui_srv.request.type = 0;
                 gui_srv.request.message = "";
                 gui_client.call(gui_srv);
                 block_detected = false;
-               
+
                 get_count_client.call(get_count_srv);
-                ROS_INFO_STREAM("diff " << get_count_srv.response.recovery_count - old_count); 
-                client.call(srv); 
+                ROS_INFO_STREAM("diff " << get_count_srv.response.recovery_count - old_count);
+                get_count_client.call(get_count_srv);
                 now = time(0);
                 tm *gmtm = gmtime(&now);
                 log_file.open(log_filename, std::ios_base::app | std::ios_base::out);
-                // state,led,date,time
+                // state,led,speech,date,time
                 log_file << "end," << randLED << "," << randSpeech << "," << (1900 + gmtm->tm_year) << "-" << (1 + gmtm->tm_mon) << "-" << gmtm->tm_mday << "," << (1 + gmtm->tm_hour) << ":" << (1 + gmtm->tm_min) << ":" << (1 + gmtm->tm_sec) << "," << (get_count_srv.response.replan_count  - old_count) << "," << get_count_srv.response.recovery_count << std::endl;
                 log_file.close();
                 //init_count_client.call(init_count_srv);
@@ -276,8 +274,8 @@ int main(int argc, char **argv)
             heard_goal = false;
         }
         //init_count_client.call(init_count_srv);
-        distanceToGoal = getDistance(); 
-        prevReplanCount = srv.response.replan_count;
+        distanceToGoal = getDistance();
+        prevReplanCount = get_count_srv.response.replan_count;
         //prevReplanCount = 0;
         loop_rate.sleep();
     }
