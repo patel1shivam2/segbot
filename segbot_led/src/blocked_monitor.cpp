@@ -39,6 +39,9 @@
 #include <move_base_msgs/MoveBaseLogging.h>
 #include <std_srvs/Empty.h>
 
+#include "bwi_msgs/LEDStatus.h"
+#include "bwi_msgs/LEDSetStatus.h"
+
 /*******************************************************
 *                 Global Variables                     *
 ********************************************************/
@@ -123,6 +126,7 @@ int main(int argc, char **argv)
     srand(time(NULL));
     time_t now = time(0);
     int old_count = 0;
+    int old_size = 0;
     std::ofstream log_file;
     std::string log_filename = ros::package::getPath("led_study") + "/data/" + "blocked_state.csv";
 
@@ -138,6 +142,9 @@ int main(int argc, char **argv)
 
     ros::ServiceClient gui_client = n.serviceClient<bwi_msgs::QuestionDialog>("question_dialog");
     bwi_msgs::QuestionDialog gui_srv;
+
+    ros::ServiceClient led_client = ros::NodeHandle().serviceClient<bwi_msgs::LEDSetStatus>("/led_set_status");
+    bwi_msgs::LEDSetStatus led_srv;
 
     // Sets up subscribers
     global_path = n.subscribe("/move_base/GlobalPlanner/plan", 1, path_cb);
@@ -164,6 +171,7 @@ int main(int argc, char **argv)
     while(ros::ok())
     {
         // Updates current path and pose
+        old_size = current_path.poses.size(); 
         ros::spinOnce();
         get_count_client.call(get_count_srv);
 
@@ -176,20 +184,25 @@ int main(int argc, char **argv)
             //Check constant if correct for variability
             //ROS_INFO_STREAM("distanceToGoal " << distanceToGoal);
             //ROS_INFO_STREAM("getDistance " << getDistance());
-            ROS_INFO_STREAM("out of loop diff " << (distanceToGoal-getDistance()));
+
+
+            ROS_INFO_STREAM("out of loop diff " <<  distanceToGoal);
             ROS_INFO_STREAM("out of loop replan count " << get_count_srv.response.replan_count);
             ROS_INFO_STREAM("prev of loop replan count " << prevReplanCount);
             //test with replan count if reduces false positives and if improves preformance
             check = distanceToGoal-getDistance();
             old_count = prevReplanCount;
             ROS_INFO_STREAM("old cou mnt " << old_count);
+            ROS_INFO_STREAM("--------------------------pose size: " << old_size);
             ROS_INFO_STREAM("--------------------------pose size: " << current_path.poses.size());
-            while((current_path.poses.size() < 5 && (distanceToGoal > .1) || r_goal.status_list[0].status == 4) )//
+            while((current_path.poses.size() < 5)  || (r_goal.status_list[0].status == 4) || (prevReplanCount + 30 < get_count_srv.response.replan_count))///
             {
                 //check = -check;
                 //ROS_INFO_STREAM("distanceToGoal " << distanceToGoal);
                 //ROS_INFO_STREAM("getDistance " << getDistance());
                 //ROS_INFO_STREAM("difference in loop " << (check));
+                ROS_INFO_STREAM("in of loop replan count " << get_count_srv.response.replan_count);
+                ROS_INFO_STREAM("prev of loop replan count " << prevReplanCount);
 				distanceToGoal = getDistance();
 
                 get_count_client.call(get_count_srv);
@@ -217,11 +230,12 @@ int main(int argc, char **argv)
                             speak_srv.request.message = "My path is Blocked, please clear a path for me";
                             speak_message_client.call(speak_srv);
                         }
+                        goal.type.led_animations = bwi_msgs::LEDAnimations::BLOCKED;
+                        goal.timeout = ros::Duration(0);
+                        ac.sendGoal(goal);
                     }
 
-                    goal.type.led_animations = bwi_msgs::LEDAnimations::BLOCKED;
-                    goal.timeout = ros::Duration(8);
-                    ac.sendGoal(goal);
+                   
 
 
                 }
@@ -233,7 +247,7 @@ int main(int argc, char **argv)
                         //init_count_client.call(init_count_srv);
                         //old_count = get_count_srv.response.replan_count;
                         ROS_INFO_STREAM("blocked not using leds");
-                        now = time(0);
+                        now = time(0); 
                         tm *gmtm = gmtime(&now);
                         ROS_INFO_STREAM("old count " << old_count);
                         log_file.open(log_filename, std::ios_base::app | std::ios_base::out);
@@ -246,6 +260,9 @@ int main(int argc, char **argv)
                 prevReplanCount = get_count_srv.response.replan_count;
                 inner_rate.sleep();
                 ros::spinOnce();
+                ROS_INFO_STREAM("--------------------------pose size old : " << old_size);
+                ROS_INFO_STREAM("--------------------------pose size: " << current_path.poses.size());
+                ROS_INFO_STREAM("--------------------------pose size diff : " << old_size - current_path.poses.size());
             }
 
             recovered_check.sleep();
@@ -259,6 +276,9 @@ int main(int argc, char **argv)
                 gui_srv.request.message = "";
                 gui_client.call(gui_srv);
                 block_detected = false;
+
+                led_srv.request.type.status = bwi_msgs::LEDStatus::RUN_ON;
+                led_client.call(led_srv);
 
                 get_count_client.call(get_count_srv);
                 ROS_INFO_STREAM("diff " << get_count_srv.response.recovery_count - old_count);
