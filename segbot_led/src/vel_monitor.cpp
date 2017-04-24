@@ -77,6 +77,7 @@ int main(int argc, char **argv)
 		
         if(vel_msg.linear.x > 0)
         {
+            ROS_INFO("POSITIVE SPEED");
             goal.type.led_animations = bwi_msgs::LEDAnimations::UP;
             goal.timeout = ros::Duration(7);
             ac.sendGoal(goal);
