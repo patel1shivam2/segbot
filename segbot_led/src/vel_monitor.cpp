@@ -82,8 +82,12 @@ int main(int argc, char **argv)
             goal.timeout = ros::Duration(7);
             ac.sendGoal(goal);
         }
+        else if(vel_msg.linear.x < 0)
+        {
+            ROS_INFO("NEGATIVE SPEED");
+        }
+        
         loop_rate.sleep();
 	}
     return 0;
 }
-
