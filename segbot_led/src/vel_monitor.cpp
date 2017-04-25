@@ -90,6 +90,7 @@ int main(int argc, char **argv)
         }
         else if(vel_msg.linear.x < 0)
         {
+<<<<<<< HEAD
 			ROS_INFO("NEGATIVE SPEED");
 			goal.type.led_animations = bwi_msgs::LEDAnimations::DOWN;
 			goal.timeout = ros::Duration(7);
@@ -107,7 +108,12 @@ int main(int argc, char **argv)
 		loop_rate.sleep();
 		
 
+=======
+            ROS_INFO("NEGATIVE SPEED");
+        }
+        
+        loop_rate.sleep();
+>>>>>>> d8f7a3d0200dd77ec89fac6320a538afaa8c0fc3
 	}
     return 0;
 }
-
