@@ -69,20 +69,44 @@ int main(int argc, char **argv)
     while(!heard_vel) 
     {
         ros::spinOnce();
+        //ros::Duration(7).sleep();		//jivko said we need to sleep
     }
 
 	while(ros::ok()) {
 		// Updates current path and pose
 		ros::spinOnce();
-		
+		int vel = vel_msg.linear.x;
+		ROS_INFO("%d\n", vel);
         if(vel_msg.linear.x > 0)
         {
             ROS_INFO("POSITIVE SPEED");
-            goal.type.led_animations = bwi_msgs::LEDAnimations::UP;
-            goal.timeout = ros::Duration(7);
-            ac.sendGoal(goal);
+            goal.type.led_animations = bwi_msgs::LEDAnimations::NEED_ASSIST;
+			goal.timeout = ros::Duration(7);
+			ROS_INFO("BEFORE");
+		
+			//ac.sendGoal(goal);
+			//ac.waitForServer()
+			ROS_INFO("AFTER");
         }
-        loop_rate.sleep();
+        else if(vel_msg.linear.x < 0)
+        {
+			ROS_INFO("NEGATIVE SPEED");
+			goal.type.led_animations = bwi_msgs::LEDAnimations::DOWN;
+			goal.timeout = ros::Duration(7);
+
+		}
+		else
+		{
+			ROS_INFO("STOPPED");
+			goal.type.led_animations = bwi_msgs::LEDAnimations::BLOCKED;
+			//goal.timeout = ros::Duration(7);
+			//ac.sendGoal(goal);
+		}
+		ac.sendGoal(goal);
+		ac.waitForResult(ros::Duration(5, 0));
+		loop_rate.sleep();
+		
+
 	}
     return 0;
 }
