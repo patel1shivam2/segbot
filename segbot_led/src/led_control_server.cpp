@@ -981,7 +981,12 @@ public:
               }
               break;
             }
-
+// Blocked Animation
+          case bwi_msgs::LEDAnimations::FORWARD:
+            { 
+              // Executes as long as timeout has not been reached, Goal is not Preempted, and ROS is OK
+              ROS_INFO("MADE IT TO FORWARD");
+            }
           // Blocked Animation
           case bwi_msgs::LEDAnimations::BLOCKED:
             {

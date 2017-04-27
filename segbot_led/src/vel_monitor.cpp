@@ -72,6 +72,8 @@ int main(int argc, char **argv)
         //ros::Duration(7).sleep();		//jivko said we need to sleep
     }
 
+        ROS_INFO("MADE IT AGAIN");
+
 	while(ros::ok()) {
 		// Updates current path and pose
 		ros::spinOnce();
@@ -80,21 +82,12 @@ int main(int argc, char **argv)
         if(vel_msg.linear.x > 0)
         {
             ROS_INFO("POSITIVE SPEED");
-            goal.type.led_animations = bwi_msgs::LEDAnimations::NEED_ASSIST;
-			goal.timeout = ros::Duration(7);
-			ROS_INFO("BEFORE");
-		
-			//ac.sendGoal(goal);
-			//ac.waitForServer()
-			ROS_INFO("AFTER");
+            goal.type.led_animations = bwi_msgs::LEDAnimations::FORWARD;
         }
         else if(vel_msg.linear.x < 0)
         {
-<<<<<<< HEAD
 			ROS_INFO("NEGATIVE SPEED");
 			goal.type.led_animations = bwi_msgs::LEDAnimations::DOWN;
-			goal.timeout = ros::Duration(7);
-
 		}
 		else
 		{
@@ -103,17 +96,10 @@ int main(int argc, char **argv)
 			//goal.timeout = ros::Duration(7);
 			//ac.sendGoal(goal);
 		}
+        goal.timeout = ros::Duration(7);        
 		ac.sendGoal(goal);
-		ac.waitForResult(ros::Duration(5, 0));
-		loop_rate.sleep();
-		
-
-=======
-            ROS_INFO("NEGATIVE SPEED");
-        }
-        
-        loop_rate.sleep();
->>>>>>> d8f7a3d0200dd77ec89fac6320a538afaa8c0fc3
+		ac.waitForResult(ros::Duration(3, 0));
+		loop_rate.sleep();        
 	}
     return 0;
 }
