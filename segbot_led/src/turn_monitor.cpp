@@ -81,14 +81,11 @@ int main(int argc, char **argv)
 		ROS_INFO("%d\n", vel);
         if(vel_msg.linear.x > 0)
         {
-            //add turn functionality in here???
             ROS_INFO("POSITIVE SPEED");
             goal.type.led_animations = bwi_msgs::LEDAnimations::FORWARD;
-            goal.type.params.push_back(0.5);
         }
         else if(vel_msg.linear.x < 0)
         {
-            //add turn functionality in here???
 			ROS_INFO("NEGATIVE SPEED");
 			goal.type.led_animations = bwi_msgs::LEDAnimations::DOWN;
 		}
@@ -101,7 +98,7 @@ int main(int argc, char **argv)
 		}
         goal.timeout = ros::Duration(7);        
 		ac.sendGoal(goal);
-		ac.waitForResult(ros::Duration(1, 0));
+		ac.waitForResult(ros::Duration(3, 0));
 		loop_rate.sleep();        
 	}
     return 0;
