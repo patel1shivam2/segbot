@@ -981,12 +981,6 @@ public:
               }
               break;
             }
-// Blocked Animation
-          case bwi_msgs::LEDAnimations::FORWARD:
-            { 
-              // Executes as long as timeout has not been reached, Goal is not Preempted, and ROS is OK
-              ROS_INFO("MADE IT TO FORWARD");
-            }
           // Blocked Animation
           case bwi_msgs::LEDAnimations::BLOCKED:
             {
@@ -1303,6 +1297,68 @@ public:
               }
               break;
             }
+	// Forward
+	case bwi_msgs::LEDAnimations::FORWARD:
+	  {
+	    // Executes as long as timeout has not been reached, Goal is not Preempted, and ROS is OK
+	    while(!as_.isPreemptRequested() && !timeout && ros::ok())
+	    {
+	      //creates an animation based on the velocity of the robot
+	      ros::Duration time_running = ros::Time::now() - start;
+	      feedback_.time_running = time_running;
+	      as_.publishFeedback(feedback_);
+
+	      //get the current velocity of the robot
+	      float current_vel = 1;
+	      //perform the calculation to get the intensity
+	      float brightness = 0.2 * current_vel;
+	      brightness = 0.4;
+	      //brightness = std::max(std::min(brightness, 0.4), 0.1);
+	      //ROS_INFO(brightness);
+	      //set the LEDs to that intensity
+	      for (int i = led_count; i >= 0; i--)
+	      {
+		//leds.setHSV(i, 118, 74, brightness);
+		leds.setHSV(i, 118, 1, brightness);
+	      }
+	      leds.flush();
+	      // Microseconds
+	      usleep(75000);
+	    }
+	    break;
+	  }
+
+	  // Backward
+	case bwi_msgs::LEDAnimations::BACKWARD:
+	  {
+	    // Executes as long as timeout has not been reached, Goal is not Preempted, and ROS is OK
+	    while(!as_.isPreemptRequested() && !timeout && ros::ok())
+	    {
+	      //creates an animation based on the velocity of the robot
+	      ros::Duration time_running = ros::Time::now() - start;
+	      feedback_.time_running = time_running;
+	      as_.publishFeedback(feedback_);
+
+	      //get the current velocity of the robot
+	      float current_vel = -1;
+	      //perform the calculation to get the intensity
+	      float brightness = 0.2 * current_vel;
+	      brightness = 0.4;
+	      //brightness = std::max(std::min(brightness, 0.4), 0.1);
+	      //ROS_INFO(brightness);
+	      //set the LEDs to that intensity
+	      for (int i = led_count; i >= 0; i--)
+	      {
+		//leds.setHSV(i, 0, 0, brightness);
+		leds.setHSV(i, 0, 0, brightness);
+	      }
+	      leds.flush();
+	      // Microseconds
+	      usleep(75000);
+	    }
+	    break;
+	  }
+
         }
 
         // Successful Execution Logic

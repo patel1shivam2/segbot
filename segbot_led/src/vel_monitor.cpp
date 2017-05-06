@@ -96,9 +96,6 @@ int main(int argc, char **argv)
         ros::Duration(7).sleep();		//jivko said we need to sleep
     }
 
-
-
-
 	while(ros::ok()) {
 		// Updates current path and pose
 		ros::spinOnce();
