@@ -117,7 +117,7 @@ int main(int argc, char **argv)
             // We only traverse the first quarter of the Global Plan Array
             for(int i = 0; i < current_path.poses.size() / 2; i++) {
               double yaw = tf::getYaw(current_path.poses[i].pose.orientation); 
-              if(abs(current_yaw - yaw) > 0.2) {
+              if(abs(current_yaw - yaw) > 0.5) {
                   // Right turn 
                   if(current_yaw - yaw < 0) {
                     ROS_INFO("RIGHT TURN");
