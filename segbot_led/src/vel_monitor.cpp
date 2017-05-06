@@ -137,7 +137,7 @@ int main(int argc, char **argv)
 		else
 		{
 			ROS_INFO("STOPPED");
-			goal.type.led_animations = bwi_msgs::LEDAnimations::BLOCKED;
+			goal.type.led_animations = bwi_msgs::LEDAnimations::STOPPED;
 		}
         goal.timeout = ros::Duration(7);        
 		ac.sendGoal(goal);
