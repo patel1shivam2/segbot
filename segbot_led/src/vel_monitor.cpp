@@ -112,18 +112,18 @@ int main(int argc, char **argv)
 
             //CODE FOR TURN FUNCTIONALITY FROM PREVIOUS FRI PROJECT
             // We only traverse the first quarter of the Global Plan Array
-            for(int i = 0; i < current_path.poses.size() / 2; i++) {
+            for(int i = 0; i < current_path.poses.size() / 4; i++) {
               double yaw = tf::getYaw(current_path.poses[i].pose.orientation); 
-              if(abs(current_yaw - yaw) > 0.5) {
+              if(abs(current_yaw - yaw) > 0.2) {
                   // Right turn 
                   if(current_yaw - yaw < 0) {
                     ROS_INFO("RIGHT TURN");
-                    goal.type.led_animations = bwi_msgs::LEDAnimations::RIGHT;    
+                    goal.type.led_animations = bwi_msgs::LEDAnimations::LEFT_TURN;    
                   }
                   // Left turn
                   else {
                     ROS_INFO("LEFT TURN");
-                    goal.type.led_animations = bwi_msgs::LEDAnimations::LEFT;
+                    goal.type.led_animations = bwi_msgs::LEDAnimations::RIGHT_TURN;
                   } 
               }
             }
