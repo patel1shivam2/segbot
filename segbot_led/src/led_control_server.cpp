@@ -1356,18 +1356,15 @@ public:
 	      feedback_.time_running = time_running;
 	      as_.publishFeedback(feedback_);
 
-	      //get the current velocity of the robot
-	      float current_vel = -1;
-	      //perform the calculation to get the intensity
-	      float brightness = 0.2 * current_vel;
-	      brightness = 0.4;
-	      //brightness = std::max(std::min(brightness, 0.4), 0.1);
-	      //ROS_INFO(brightness);
+        float current_vel = vel_msg.linear.x;
+        //perform the calculation to get the intensity
+        float briRatio = 0.57;
+        float brightness = (current_vel - 0.3) * briRatio;
 	      //set the LEDs to that intensity
 	      for (int i = led_count; i >= 0; i--)
 	      {
-		//leds.setHSV(i, 0, 0, brightness);
-		leds.setHSV(i, 0, 0, brightness);
+      		//leds.setHSV(i, 0, 0, brightness);
+      		leds.setHSV(i, 0, 0, brightness);
 	      }
 	      leds.flush();
 	      // Microseconds
@@ -1390,9 +1387,7 @@ public:
 	      srand(time(NULL));
 	      for (int i = led_count; i >= 0; i--)
 	      {
-    			//leds.setHSV(i, 0, 0, brightness);
-          int randHue = 252;
-    			//int randHue = (rand() % 360) + 1;
+    			int randHue = (rand() % 360) + 1;
     			leds.setHSV(i, randHue, 1, 0.4);
 	     }
 	      leds.flush();
