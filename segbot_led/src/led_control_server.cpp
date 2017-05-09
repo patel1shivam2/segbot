@@ -1336,7 +1336,7 @@ public:
 	      //set the LEDs to that intensity
 	      for (int i = led_count; i >= 0; i--)
 	      {
-		leds.setHSV(i, 118, 1, brightness);
+	 	       leds.setHSV(i, 118, 1, brightness);
 	      }
 	      leds.flush();
 	      // Microseconds
@@ -1391,7 +1391,8 @@ public:
 	      for (int i = led_count; i >= 0; i--)
 	      {
     			//leds.setHSV(i, 0, 0, brightness);
-    			int randHue = (rand() % 360) + 1;
+          int randHue = 252;
+    			//int randHue = (rand() % 360) + 1;
     			leds.setHSV(i, randHue, 1, 0.4);
 	     }
 	      leds.flush();
