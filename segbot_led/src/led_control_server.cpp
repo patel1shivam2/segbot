@@ -36,6 +36,10 @@
 #include "bwi_msgs/LEDAnimations.h"
 #include "bwi_msgs/LEDCameraStatus.h"
 #include "bwi_msgs/LEDTestType.h"
+#include <geometry_msgs/Twist.h>
+#include <geometry_msgs/PoseArray.h>
+#include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
 
 /*******************************************************
 *                 Global Variables                     *
@@ -85,6 +89,7 @@ int top_of_u_end;
 
 geometry_msgs::Twist vel_msg;
 bool heard_vel = false;
+ros::Subscriber robot_vel;
 
 
 
@@ -93,7 +98,7 @@ bool heard_vel = false;
 *                 Helper Functions                     *
 *                                                      *
 ********************************************************/
-void vel_cb(const geometry_msgs::Twist:ConstPtr& msg)
+void vel_cb(const geometry_msgs::Twist::ConstPtr& msg)
 {
 	vel_msg = *msg;
 	heard_vel = true;
@@ -163,7 +168,6 @@ void ledSigintHandler(int sig)
   ros::shutdown();
 }
 
-void vel_cb
 
 /*******************************************************
 *                                                      *
