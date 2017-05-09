@@ -83,11 +83,22 @@ int circular_u_end;
 int top_of_u_start;
 int top_of_u_end;
 
+geometry_msgs::Twist vel_msg;
+bool heard_vel = false;
+
+
+
 /*******************************************************
 *                                                      *
 *                 Helper Functions                     *
 *                                                      *
 ********************************************************/
+void vel_cb(const geometry_msgs::Twist:ConstPtr& msg)
+{
+	vel_msg = *msg;
+	heard_vel = true;
+}
+
 void check_camera_status()
 {
   if(camera_on)
@@ -151,6 +162,8 @@ void ledSigintHandler(int sig)
   camera_on = false;
   ros::shutdown();
 }
+
+void vel_cb
 
 /*******************************************************
 *                                                      *
@@ -1312,16 +1325,13 @@ public:
 	      as_.publishFeedback(feedback_);
 
 	      //get the current velocity of the robot
-	      float current_vel = 1;
+	      float current_vel = vel_msg.linear.x;
 	      //perform the calculation to get the intensity
-	      float brightness = 0.2 * current_vel;
-	      brightness = 0.1;
-	      //brightness = std::max(std::min(brightness, 0.4), 0.1);
-	      //ROS_INFO(brightness);
+	      float briRatio = 0.57;
+	      float brightness = (current_vel - 0.3) * briRatio;
 	      //set the LEDs to that intensity
 	      for (int i = led_count; i >= 0; i--)
 	      {
-		//leds.setHSV(i, 118, 74, brightness);
 		leds.setHSV(i, 118, 1, brightness);
 	      }
 	      leds.flush();
@@ -1599,6 +1609,9 @@ int main(int argc, char **argv)
 {
   ros::init(argc, argv, "led_control_server");
   ros::NodeHandle n;
+
+  //Subscriber to Robot velocity
+  robot_vel = n.subscribe("/cmd_vel", 1, vel_cb);
 
   // Override the default ros sigint handler.
   // This must be set after the first NodeHandle is created.

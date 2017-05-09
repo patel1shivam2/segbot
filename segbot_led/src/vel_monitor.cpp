@@ -133,7 +133,7 @@ int main(int argc, char **argv)
             //add turn functionality in here???
 			ROS_INFO("NEGATIVE SPEED");
 			goal.type.led_animations = bwi_msgs::LEDAnimations::BACKWARD;
-		}
+	}
 		else
 		{
 			ROS_INFO("STOPPED");
@@ -141,7 +141,7 @@ int main(int argc, char **argv)
 		}
         goal.timeout = ros::Duration(7);        
 		ac.sendGoal(goal);
-		ac.waitForResult(ros::Duration(1, 0));
+		ac.waitForResult(ros::Duration(0.5, 0));
 		loop_rate.sleep();        
 	}
 
