@@ -93,7 +93,7 @@ int main(int argc, char **argv)
     while(!heard_vel) 
     {
         ros::spinOnce();
-        ros::Duration(7).sleep();		//jivko said we need to sleep
+        ros::Duration(3).sleep();		//jivko said we need to sleep
     }
 
 	while(ros::ok()) {
@@ -137,7 +137,7 @@ int main(int argc, char **argv)
 			ROS_INFO("STOPPED");
 			goal.type.led_animations = bwi_msgs::LEDAnimations::STOPPED;
 		}
-        goal.timeout = ros::Duration(7);     
+        goal.timeout = ros::Duration(2);     
 		ac.sendGoal(goal);
 		ac.waitForResult(ros::Duration(0.2, 0));
 		loop_rate.sleep();        
