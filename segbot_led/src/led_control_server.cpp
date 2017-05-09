@@ -1315,7 +1315,7 @@ public:
 	      float current_vel = 1;
 	      //perform the calculation to get the intensity
 	      float brightness = 0.2 * current_vel;
-	      brightness = 0.4;
+	      brightness = 0.1;
 	      //brightness = std::max(std::min(brightness, 0.4), 0.1);
 	      //ROS_INFO(brightness);
 	      //set the LEDs to that intensity
