@@ -136,6 +136,13 @@ int main(int argc, char **argv)
 		{
 			ROS_INFO("STOPPED");
 			goal.type.led_animations = bwi_msgs::LEDAnimations::STOPPED;
+      // if the linear is 0 but the angular is not 0
+      // means that the robot is using the rotating mechanism
+      if(vel_msg.angular.z != 0) 
+      {
+        ROS_INFO("ROTATING");
+        goal.type.led_animations = bwi_msgs::LEDAnimations::ROTATING;
+      }  
 		}
         goal.timeout = ros::Duration(2);     
 		ac.sendGoal(goal);

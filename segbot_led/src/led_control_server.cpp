@@ -1367,35 +1367,35 @@ public:
       		leds.setHSV(i, 0, 0, brightness);
 	      }
 	      leds.flush();
+	      // Micrsoeconds
+	      usleep(75000);
+	    }
+	    break;
+	  }
+	    // ROTATING
+	case bwi_msgs::LEDAnimations::ROTATING:
+	  {
+	    // Executes as long as timeout has not been reached, Goal is not Preempted, and ROS is OK
+	    while(!as_.isPreemptRequested() && !timeout && ros::ok())
+	    {
+	      //creates an animation based on the velocity of the robot
+	      ros::Duration time_running = ros::Time::now() - start;
+	      feedback_.time_running = time_running;
+	      as_.publishFeedback(feedback_);
+
+	      //set the LEDs to that intensity
+	      srand(time(NULL));
+	      for (int i = led_count; i >= 0; i--)
+	      {
+    			int randHue = (rand() % 360) + 1;
+    			leds.setHSV(i, randHue, 1, 0.4);
+	     }
+	      leds.flush();
 	      // Microseconds
 	      usleep(75000);
 	    }
 	    break;
 	  }
-	//     // Stopped
-	// case bwi_msgs::LEDAnimations::STOPPED:
-	//   {
-	//     // Executes as long as timeout has not been reached, Goal is not Preempted, and ROS is OK
-	//     while(!as_.isPreemptRequested() && !timeout && ros::ok())
-	//     {
-	//       //creates an animation based on the velocity of the robot
-	//       ros::Duration time_running = ros::Time::now() - start;
-	//       feedback_.time_running = time_running;
-	//       as_.publishFeedback(feedback_);
-
-	//       //set the LEDs to that intensity
-	//       srand(time(NULL));
-	//       for (int i = led_count; i >= 0; i--)
-	//       {
- //    			int randHue = (rand() % 360) + 1;
- //    			leds.setHSV(i, randHue, 1, 0.4);
-	//      }
-	//       leds.flush();
-	//       // Microseconds
-	//       usleep(75000);
-	//     }
-	//     break;
-	//   }
 // NEED_DOOR
           case bwi_msgs::LEDAnimations::STOPPED:
             {
