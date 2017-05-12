@@ -1372,32 +1372,105 @@ public:
 	    }
 	    break;
 	  }
-	    // Stopped
-	case bwi_msgs::LEDAnimations::STOPPED:
-	  {
-	    // Executes as long as timeout has not been reached, Goal is not Preempted, and ROS is OK
-	    while(!as_.isPreemptRequested() && !timeout && ros::ok())
-	    {
-	      //creates an animation based on the velocity of the robot
-	      ros::Duration time_running = ros::Time::now() - start;
-	      feedback_.time_running = time_running;
-	      as_.publishFeedback(feedback_);
+	//     // Stopped
+	// case bwi_msgs::LEDAnimations::STOPPED:
+	//   {
+	//     // Executes as long as timeout has not been reached, Goal is not Preempted, and ROS is OK
+	//     while(!as_.isPreemptRequested() && !timeout && ros::ok())
+	//     {
+	//       //creates an animation based on the velocity of the robot
+	//       ros::Duration time_running = ros::Time::now() - start;
+	//       feedback_.time_running = time_running;
+	//       as_.publishFeedback(feedback_);
 
-	      //set the LEDs to that intensity
-	      srand(time(NULL));
-	      for (int i = led_count; i >= 0; i--)
-	      {
-    			int randHue = (rand() % 360) + 1;
-    			leds.setHSV(i, randHue, 1, 0.4);
-	     }
-	      leds.flush();
-	      // Microseconds
-	      usleep(75000);
-	    }
-	    break;
-	  }
+	//       //set the LEDs to that intensity
+	//       srand(time(NULL));
+	//       for (int i = led_count; i >= 0; i--)
+	//       {
+ //    			int randHue = (rand() % 360) + 1;
+ //    			leds.setHSV(i, randHue, 1, 0.4);
+	//      }
+	//       leds.flush();
+	//       // Microseconds
+	//       usleep(75000);
+	//     }
+	//     break;
+	//   }
+// NEED_DOOR
+          case bwi_msgs::LEDAnimations::STOPPED:
+            {
+              // Executes as long as timeout has not been reached, Goal is not Preempted, and ROS is OK
+              while(!as_.isPreemptRequested() && !timeout && ros::ok())
+              {
+                // Creates an animation of leds which travels up along the strip
+
+                ros::Duration time_running = ros::Time::now() - start;
+                feedback_.time_running = time_running;
+                as_.publishFeedback(feedback_);
 
 
+                // set j equal to back left corner of the u strip (85)
+                int j = ((circular_u_end - circular_u_start) / 3) + circular_u_start;
+                //set temp equal to back right corner of the u strip (95)
+                int temp = ((circular_u_end - circular_u_start) / 3) + j;
+
+                for (int i = temp; i <= circular_u_end;)
+                {
+                  // Terminate goal if preempted, timeout is reached, or ros fails
+                  if(as_.isPreemptRequested() || timeout || !ros::ok()) { break; }
+
+                  if (i == temp)
+                  {
+                    leds.setHSV(i, 58, 1, .1);
+                    leds.setHSV(i+1, 58, 1, .1);
+                    leds.setHSV(i+2, 58, 1, .1);
+
+                    leds.setHSV(j, 58, 1, .1);
+                    leds.setHSV(j-1, 58, 1, .1);
+                    leds.setHSV(j-2, 58, 1, .1);
+
+                    i+=3;
+                    j-=3;
+                  }
+                  else
+                  {
+                    leds.setHSV(i, 58, 1, .1);
+                    leds.setHSV(j, 58, 1, .1);
+                    i+=1;
+                    j-=1;
+                  }
+
+                  if (i > temp)
+                  {
+                    leds.setRGB(i-3, 0, 0, 0);
+                    leds.setRGB(j+3, 0, 0, 0);
+                  }
+
+                  leds.flush();
+                  // Microseconds
+                  usleep(100000);
+
+                  if (i == circular_u_end)
+                  {
+                    leds.setRGB(i, 0, 0, 0);
+                    leds.setRGB(i-1, 0, 0, 0);
+                    leds.setRGB(i-2, 0, 0, 0);
+
+                    leds.setRGB(j, 0, 0, 0);
+                    leds.setRGB(j+1, 0, 0, 0);
+                    leds.setRGB(j+2, 0, 0, 0);
+
+                    i+=1;
+                    j-=1;
+
+                    leds.flush();
+                    // Microseconds
+                    usleep(100000);
+                  }
+                }
+              }
+              break;
+            }
 
         }
 
