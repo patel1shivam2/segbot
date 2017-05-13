@@ -1419,6 +1419,43 @@ public:
                   // Terminate goal if preempted, timeout is reached, or ros fails
                   if(as_.isPreemptRequested() || timeout || !ros::ok()) { break; }
 
+
+                int l = front_left_beam_start;
+                int k = front_right_beam_start;
+                int j = back_left_beam_start;
+                
+
+                srand(time(NULL));
+
+
+                for (int i = back_right_beam_start; i <= back_right_beam_end;)
+                {
+                  // Terminate goal if preempted, timeout is reached, or ros fails
+                  if(as_.isPreemptRequested() || timeout || !ros::ok()) { break; }
+
+                    int randHue = (rand() % 360) + 1;
+
+                    leds.setHSV(i, randHue, 1, .1);
+
+                    int randHue = (rand() % 360) + 1;
+
+                    leds.setHSV(l, randHue, 1, .1);
+                    
+                    int randHue = (rand() % 360) + 1;
+
+                    leds.setHSV(k, randHue, 1, .1);
+
+                    int randHue = (rand() % 360) + 1;
+
+                    leds.setHSV(j, randHue, 1, .1);
+
+
+                    i++;
+                    l++;
+                    k--;
+                    j--;
+
+
                   if (i == temp)
                   {
                     leds.setHSV(i, 58, 1, .1);
