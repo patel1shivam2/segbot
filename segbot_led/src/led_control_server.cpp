@@ -1427,7 +1427,6 @@ public:
 
                 srand(time(NULL));
 
-
                 for (int i = back_right_beam_start; i <= back_right_beam_end;)
                 {
                   // Terminate goal if preempted, timeout is reached, or ros fails
@@ -1437,15 +1436,15 @@ public:
 
                     leds.setHSV(i, randHue, 1, .1);
 
-                    int randHue = (rand() % 360) + 1;
+                    randHue = (rand() % 360) + 1;
 
                     leds.setHSV(l, randHue, 1, .1);
                     
-                    int randHue = (rand() % 360) + 1;
+                    randHue = (rand() % 360) + 1;
 
                     leds.setHSV(k, randHue, 1, .1);
 
-                    int randHue = (rand() % 360) + 1;
+                    randHue = (rand() % 360) + 1;
 
                     leds.setHSV(j, randHue, 1, .1);
 
@@ -1454,7 +1453,7 @@ public:
                     l++;
                     k--;
                     j--;
-
+                }
 
                   if (i == temp)
                   {
