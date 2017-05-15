@@ -43,7 +43,7 @@ ros::Subscriber robot_pose;
 /*******************************************************
 *                 Callback Functions                   *
 ********************************************************/
-// Updates the current velocity
+// Updates the current velocity global instance variable
 void vel_cb(const geometry_msgs::Twist::ConstPtr& msg)
 {
    vel_msg = *msg;
@@ -65,8 +65,6 @@ void pose_cb(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg) {
 
 int main(int argc, char **argv)
 {
-    ROS_INFO("MADE IT");
-
     ros::init(argc, argv, "vel_monitor");
     ros::NodeHandle n;
 
@@ -83,17 +81,16 @@ int main(int argc, char **argv)
 
     // Sets up action client
     actionlib::SimpleActionClient<bwi_msgs::LEDControlAction> ac("led_control_server", true);
+    // Wait for initialization of the action client
     ac.waitForServer();
-    ROS_INFO("MADE AGAIN");
+    // Initialization of the goal to send with the newly created action client
     bwi_msgs::LEDControlGoal goal;
-
-
 
     // Waits for current path and pose to update
     while(!heard_vel) 
     {
         ros::spinOnce();
-        ros::Duration(3).sleep();		//jivko said we need to sleep
+        ros::Duration(3).sleep(); //jivko said we need to sleep
     }
 
 	while(ros::ok()) {
@@ -102,34 +99,48 @@ int main(int argc, char **argv)
 		int vel = vel_msg.linear.x;
 		ROS_INFO("%d\n", vel);
 
+	// current orientation
+	// Project deals with angles in Yaw rather than Quaternions
         double current_yaw = tf::getYaw(current_pose.orientation); 
 
+	//Conditional to Check current velocity status of the robot
         if(vel_msg.linear.x > 0)
         {
+	    //Trouble shooting message, kept for future use
             ROS_INFO("POSITIVE SPEED");
+ 	    // Initialization of the LED message with current status
             goal.type.led_animations = bwi_msgs::LEDAnimations::FORWARD;
 
             //CODE FOR TURN FUNCTIONALITY FROM PREVIOUS FRI PROJECT
+  	    // Modified for further accuracy of the algorithm
             // We only traverse the first quarter of the Global Plan Array
             for(int i = 0; i < current_path.poses.size() / 4; i++) {
-              double yaw = tf::getYaw(current_path.poses[i].pose.orientation); 
+              double yaw = tf::getYaw(current_path.poses[i].pose.orientation);
+              //Check for a treshold breaching of orientation values
               if(abs(current_yaw - yaw) > 0.2) {
-                  // Right turn 
+                  // Right turn - Negative difference 
                   if(current_yaw - yaw < 0) {
+		    // Troubleshooting message
                     ROS_INFO("RIGHT TURN");
+		    // Update of LED Message because of turn detection
                     goal.type.led_animations = bwi_msgs::LEDAnimations::LEFT_TURN;    
                   }
-                  // Left turn
+                  // Left turn - Positive difference
                   else {
+		    // Troubleshooting message
                     ROS_INFO("LEFT TURN");
+		    // Update of LED Message because of turn detection
                     goal.type.led_animations = bwi_msgs::LEDAnimations::RIGHT_TURN;
                   } 
               }
             }
         }
+	// Negative velocity detection
         else if(vel_msg.linear.x < 0)
         {
+		        // Troubleshooting message
 			ROS_INFO("NEGATIVE SPEED");
+		        // Update of LED Message because of velocity detection
 			goal.type.led_animations = bwi_msgs::LEDAnimations::BACKWARD;
 	    }
 		else
@@ -140,15 +151,18 @@ int main(int argc, char **argv)
       // means that the robot is using the rotating mechanism
       if(vel_msg.angular.z != 0) 
       {
+        // Troubleshooting message
         ROS_INFO("ROTATING");
+        // Set of the LED Message in Sample case
         goal.type.led_animations = bwi_msgs::LEDAnimations::ROTATING;
       }  
 		}
-        goal.timeout = ros::Duration(2);     
+        goal.timeout = ros::Duration(2);
+        //Action client sends message     
 		ac.sendGoal(goal);
+        //Wait for Action Client to come back for an allotted amount of time
 		ac.waitForResult(ros::Duration(0.2, 0));
 		loop_rate.sleep();        
 	}
-
     return 0;
 }
